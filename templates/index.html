@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <head><title>Submittal vs Spec Checker</title></head>
+  <body>
+    <h1>Submittal vs Spec Compliance Checker</h1>
+    <form method="post" enctype="multipart/form-data">
+      <label>Specification PDF:
+        <input type="file" name="spec" accept="application/pdf" required>
+      </label><br>
+      <label>Submittal PDF:
+        <input type="file" name="submittal" accept="application/pdf" required>
+      </label><br>
+      <button type="submit">Compare</button>
+    </form>
+    {% if result %}
+      <h2>Result</h2>
+      <pre>{{ result }}</pre>
+    {% endif %}
+  </body>
+</html>
