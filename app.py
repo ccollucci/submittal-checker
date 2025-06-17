@@ -23,7 +23,7 @@ def extract_text(file_stream):
     return "\n".join(page.get_text() for page in doc)
 
 def extract_json_array(text):
-    match = re.search(r"\[.*\]", text, re.DOTALL)
+    match = re.search(r"\[.*?\]", text, re.DOTALL)
     return match.group(0) if match else None
 
 @app.route('/', methods=['GET', 'POST'])
@@ -39,6 +39,10 @@ def index():
             try:
                 spec_text = extract_text(spec_file)
                 subm_text = extract_text(subm_file)
+
+                # Basic input validation
+                if len(spec_text) < 100 or len(subm_text) < 100:
+                    raise ValueError("One or both PDFs may be empty or too short.")
 
                 # Step 1: Extract requirements from spec
                 extract_prompt = [
@@ -68,7 +72,9 @@ def index():
 
                 clean_json = extract_json_array(raw_output)
                 if not clean_json:
+                    print("⚠️ GPT returned non-JSON:", raw_output)
                     raise ValueError("GPT did not return valid JSON.")
+
                 requirements = json.loads(clean_json)
 
                 # Step 2: Compare requirements to submittal
@@ -93,11 +99,7 @@ def index():
                 )
 
                 result_json = compare_response.choices[0].message.content.strip()
-                cleaned_json = extract_json_array(result_json)
-                if not cleaned_json:
-                    raise ValueError("GPT did not return valid JSON.")
-                parsed_result = json.loads(cleaned_json)
-
+                parsed_result = json.loads(result_json)
 
                 summary = "Comparison completed successfully."
 
