@@ -109,7 +109,17 @@ def index():
             except Exception as e:
                 summary = f"⚠️ Error: {e}"
 
-    return render_template('index.html', summary=summary, rendered_table=rendered_table)
+    print("SUMMARY:")
+    print(summary)
+    print("RENDERED TABLE:")
+    print(rendered_table)
+
+    return render_template(
+    'index.html',
+    summary=summary or "",
+    rendered_table=rendered_table or ""
+)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
