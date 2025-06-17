@@ -3,3 +3,4 @@ python-dotenv
 PyMuPDF
 openai==0.27.6
 gunicorn
+markdown2
