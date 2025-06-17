@@ -1,5 +1,4 @@
 import os
-import json
 import time
 from flask import Flask, request, render_template
 import fitz  # PyMuPDF
@@ -24,7 +23,7 @@ def extract_text(file_stream):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     summary = None
-    parsed_result = []
+    raw_table = None
 
     if request.method == 'POST':
         spec_file = request.files.get('spec')
@@ -35,13 +34,13 @@ def index():
                 spec_text = extract_text(spec_file)
                 subm_text = extract_text(subm_file)
 
-                # Step 1: Extract requirements from spec
+                # Step 1: Extract requirements
                 extract_prompt = [
                     {
                         "role": "system",
                         "content": (
-                            "You are an architectural compliance assistant. Your task is to extract only enforceable, specific requirements from the provided specification."
-                            " Return a valid JSON array of strings."
+                            "You are an architectural compliance assistant. Extract enforceable requirements from the specification."
+                            " List each one briefly as a bullet point."
                         )
                     },
                     {
@@ -57,20 +56,21 @@ def index():
                 )
 
                 time.sleep(10)
-                requirements = json.loads(extract_response.choices[0].message.content.strip())
+                requirements_text = extract_response.choices[0].message.content.strip()
 
-                # Step 2: Compare requirements to submittal
+                # Step 2: Compare requirements to submittal using markdown table
                 compare_prompt = [
                     {
                         "role": "system",
                         "content": (
-                            "You are a construction compliance checker. Compare each requirement against the SUBMITTAL below."
-                            " Return a JSON array of objects with: requirement, provided, compliance (true/false), comment."
+                            "Compare each requirement to the submittal."
+                            " Respond in a markdown table with columns: Requirement | Provided | Compliant (Yes/No) | Comment."
+                            " Only return the table."
                         )
                     },
                     {
                         "role": "user",
-                        "content": f"REQUIREMENTS:\n{json.dumps(requirements)}\n\nSUBMITTAL:\n{subm_text}"
+                        "content": f"REQUIREMENTS:\n{requirements_text}\n\nSUBMITTAL:\n{subm_text}"
                     }
                 ]
 
@@ -80,13 +80,13 @@ def index():
                     temperature=0
                 )
 
-                parsed_result = json.loads(compare_response.choices[0].message.content.strip())
+                raw_table = compare_response.choices[0].message.content.strip()
                 summary = "Comparison completed successfully."
 
             except Exception as e:
                 summary = f"⚠️ Error: {e}"
 
-    return render_template('index.html', summary=summary, parsed_result=parsed_result)
+    return render_template('index.html', summary=summary, raw_table=raw_table)
 
 if __name__ == '__main__':
     app.run(debug=True)
