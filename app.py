@@ -1,5 +1,6 @@
 import os
 import time
+import markdown2
 from flask import Flask, request, render_template
 import fitz  # PyMuPDF
 import openai
@@ -23,7 +24,7 @@ def extract_text(file_stream):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     summary = ""
-    raw_table = ""
+    rendered_table = ""
 
     if request.method == 'POST':
         spec_file = request.files.get('spec')
@@ -64,7 +65,7 @@ def index():
                         "role": "system",
                         "content": (
                             "Compare each requirement to the submittal."
-                            " First provide a brief summary (3-4 sentences) of the overall compliance." 
+                            " First provide a brief summary (2-3 sentences) of the overall compliance."
                             " Then provide a markdown table with columns: Requirement | Provided | Compliant (Yes/No) | Comment."
                             " Only return the summary paragraph followed by the table."
                         )
@@ -92,10 +93,12 @@ def index():
                     summary = full_output
                     raw_table = ""
 
+                rendered_table = markdown2.markdown(raw_table)
+
             except Exception as e:
                 summary = f"⚠️ Error: {e}"
 
-    return render_template('index.html', summary=summary, raw_table=raw_table)
+    return render_template('index.html', summary=summary, rendered_table=rendered_table)
 
 if __name__ == '__main__':
     app.run(debug=True)
