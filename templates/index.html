@@ -42,7 +42,7 @@
       padding: 1rem;
       border-radius: 6px;
       max-height: 600px;
-      overflow-y: auto;
+      overflow-x: auto;
       text-align: left;
     }
 
@@ -63,20 +63,26 @@
 
     table {
       width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
     }
 
     th, td {
-      padding: 6px 10px;
+      padding: 8px 12px;
       border: 1px solid #ccc;
+      text-align: left;
     }
 
     th {
       background-color: #e9ecef;
-      font-weight: bold;
     }
 
-    td {
-      background-color: #ffffff;
+    tr:nth-child(even) td {
+      background-color: #fdfdfd;
+    }
+
+    tr:nth-child(odd) td {
+      background-color: #f7f7f7;
     }
   </style>
 </head>

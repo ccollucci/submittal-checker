@@ -21,6 +21,15 @@ def extract_text(file_stream):
     doc = fitz.open(stream=file_stream.read(), filetype="pdf")
     return "\n".join(page.get_text() for page in doc)
 
+def ensure_valid_markdown_table(table_text):
+    # Ensure table has a proper header and separator line
+    lines = [line.strip() for line in table_text.splitlines() if line.strip()]
+    if len(lines) >= 2 and "|" in lines[0]:
+        header = lines[0]
+        separator = "|".join(["---"] * (header.count("|") - 1))
+        lines.insert(1, separator)
+    return "\n".join(lines)
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     summary = ""
@@ -67,6 +76,7 @@ def index():
                             "Compare each requirement to the submittal."
                             " First provide a brief summary (2-3 sentences) of the overall compliance."
                             " Then provide a markdown table with columns: Requirement | Provided | Compliant (Yes/No) | Comment."
+                            " Make sure the markdown table includes a proper header separator using --- on the second line."
                             " Only return the summary paragraph followed by the table."
                         )
                     },
@@ -93,6 +103,7 @@ def index():
                     summary = full_output
                     raw_table = ""
 
+                raw_table = ensure_valid_markdown_table(raw_table)
                 rendered_table = markdown2.markdown(raw_table)
 
             except Exception as e:
