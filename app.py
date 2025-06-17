@@ -50,7 +50,7 @@ def index():
                         "role": "system",
                         "content": (
                             "You are an architectural compliance assistant. Your task is to extract only enforceable, specific requirements from the provided specification."
-                            " Do not summarize or paraphrase. List the requirements exactly as written, in their original wording. Return the list as a JSON array of strings."
+                            " Do not summarize or paraphrase. Return only a valid JSON array of strings. Do not include any comments, explanations, or formatting. Use proper escape characters and close all quotes."
                         )
                     },
                     {
@@ -75,7 +75,12 @@ def index():
                     print("⚠️ GPT returned non-JSON:", raw_output)
                     raise ValueError("GPT did not return valid JSON.")
 
-                requirements = json.loads(clean_json)
+                try:
+                    requirements = json.loads(clean_json)
+                except json.JSONDecodeError as e:
+                    print("❌ Failed to parse JSON:")
+                    print(clean_json)
+                    raise ValueError(f"Invalid JSON format: {e}")
 
                 # Step 2: Compare requirements to submittal
                 compare_prompt = [
