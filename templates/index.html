@@ -10,12 +10,9 @@
       margin: 0;
       padding: 0;
     }
-
     body {
-      position: relative;
       font-family: system-ui, sans-serif;
     }
-
     .background-image {
       background: url("/static/bg.jpg") no-repeat center center fixed;
       background-size: cover;
@@ -25,26 +22,23 @@
       height: 100%;
       z-index: -2;
     }
-
     .background-overlay {
-      background-color: rgba(255, 255, 255, 0.5); /* 80% white overlay */
+      background-color: rgba(255, 255, 255, 0.5);
       position: fixed;
       top: 0; left: 0;
       width: 100%;
       height: 100%;
       z-index: -1;
     }
-
     .container {
       max-width: 720px;
       margin: auto;
       text-align: center;
       padding-top: 4rem;
     }
-
     .result-box {
       white-space: pre-wrap;
-      background: #f1f1f1;
+      background: #f8f9fa;
       border: 1px solid #ddd;
       padding: 1rem;
       border-radius: 6px;
@@ -52,7 +46,6 @@
       overflow-y: auto;
       text-align: left;
     }
-
     .logo {
       position: absolute;
       top: 20px;
@@ -89,6 +82,11 @@
       </div>
     </form>
 
+    {% if summary %}
+      <h2 class="mt-4">Summary</h2>
+      <div class="result-box mt-2">{{ summary }}</div>
+    {% endif %}
+
     {% if parsed_result %}
       <h2 class="mt-4">Compliance Results</h2>
       <div class="table-responsive mt-3">
@@ -120,7 +118,7 @@
         </table>
       </div>
     {% elif result %}
-      <h2 class="mt-4">AI-Generated Comparison</h2>
+      <h2 class="mt-4">Raw Output</h2>
       <div class="result-box mt-3">{{ result }}</div>
     {% endif %}
   </div>
