@@ -93,7 +93,11 @@ def index():
                 )
 
                 result_json = compare_response.choices[0].message.content.strip()
-                parsed_result = json.loads(result_json)
+                cleaned_json = extract_json_array(result_json)
+                if not cleaned_json:
+                    raise ValueError("GPT did not return valid JSON.")
+                parsed_result = json.loads(cleaned_json)
+
 
                 summary = "Comparison completed successfully."
 
