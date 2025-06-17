@@ -58,14 +58,15 @@ def index():
                 time.sleep(10)
                 requirements_text = extract_response.choices[0].message.content.strip()
 
-                # Step 2: Compare requirements to submittal using markdown table
+                # Step 2: Compare requirements to submittal using markdown table and summary
                 compare_prompt = [
                     {
                         "role": "system",
                         "content": (
                             "Compare each requirement to the submittal."
-                            " Respond in a markdown table with columns: Requirement | Provided | Compliant (Yes/No) | Comment."
-                            " Only return the table."
+                            " First provide a brief summary (3-4 sentences) of the overall compliance." 
+                            " Then provide a markdown table with columns: Requirement | Provided | Compliant (Yes/No) | Comment."
+                            " Only return the summary paragraph followed by the table."
                         )
                     },
                     {
@@ -80,8 +81,16 @@ def index():
                     temperature=0
                 )
 
-                raw_table = compare_response.choices[0].message.content.strip()
-                summary = "Comparison completed successfully."
+                full_output = compare_response.choices[0].message.content.strip()
+
+                # Separate summary and table
+                split = full_output.split("| Requirement |", 1)
+                if len(split) == 2:
+                    summary = split[0].strip()
+                    raw_table = "| Requirement |" + split[1].strip()
+                else:
+                    summary = full_output
+                    raw_table = ""
 
             except Exception as e:
                 summary = f"⚠️ Error: {e}"
