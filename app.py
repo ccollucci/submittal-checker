@@ -22,8 +22,8 @@ def extract_text(file_stream):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    summary = None
-    raw_table = None
+    summary = ""
+    raw_table = ""
 
     if request.method == 'POST':
         spec_file = request.files.get('spec')
@@ -86,12 +86,7 @@ def index():
             except Exception as e:
                 summary = f"⚠️ Error: {e}"
 
-    return render_template(
-    'index.html',
-    summary=summary or "",
-    raw_table=raw_table or ""
-)
-
+    return render_template('index.html', summary=summary, raw_table=raw_table)
 
 if __name__ == '__main__':
     app.run(debug=True)
