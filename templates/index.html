@@ -13,7 +13,8 @@
       color: white;
     }
 
-    .header-img {
+    .header-img,
+    .footer-img {
       width: 100%;
       height: auto;
       display: block;
@@ -46,15 +47,6 @@
       text-align: left;
     }
 
-    .footer {
-      font-family: Arial, sans-serif;
-      font-size: 0.9rem;
-      color: #ffffff;
-      text-align: center;
-      margin-top: 2rem;
-      padding-bottom: 1rem;
-    }
-
     .form-wrapper {
       text-align: center;
     }
@@ -64,6 +56,10 @@
       width: 100%;
       max-width: 400px;
       text-align: left;
+    }
+
+    .footer-img {
+      margin-top: 2rem;
     }
   </style>
 </head>
@@ -140,7 +136,7 @@
     {% endif %}
   </div>
 
-  <div class="footer">Powered by IDEA</div>
+  <img src="/static/footer.jpg" alt="Footer" class="footer-img">
 
   <script>
     function showLoadingBar() {
