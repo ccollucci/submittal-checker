@@ -1,8 +1,6 @@
 import os
 import json
 import time
-import re
-import ast
 from flask import Flask, request, render_template
 import fitz  # PyMuPDF
 import openai
@@ -23,10 +21,6 @@ def extract_text(file_stream):
     doc = fitz.open(stream=file_stream.read(), filetype="pdf")
     return "\n".join(page.get_text() for page in doc)
 
-def extract_json_array(text):
-    match = re.search(r"\[.*?\]", text, re.DOTALL)
-    return match.group(0) if match else None
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     summary = None
@@ -41,18 +35,13 @@ def index():
                 spec_text = extract_text(spec_file)
                 subm_text = extract_text(subm_file)
 
-                # Basic input validation
-                if len(spec_text) < 100 or len(subm_text) < 100:
-                    raise ValueError("One or both PDFs may be empty or too short.")
-
                 # Step 1: Extract requirements from spec
                 extract_prompt = [
                     {
                         "role": "system",
                         "content": (
                             "You are an architectural compliance assistant. Your task is to extract only enforceable, specific requirements from the provided specification."
-                            " Do not summarize or paraphrase. Return only a valid JSON array of strings using double straight quotes (\")."
-                            " Do not use curly quotes, smart quotes, or markdown formatting."
+                            " Return a valid JSON array of strings."
                         )
                     },
                     {
@@ -68,23 +57,7 @@ def index():
                 )
 
                 time.sleep(10)
-                raw_output = extract_response.choices[0].message.content.strip()
-                print("GPT Extracted Requirements Raw Output:")
-                print(raw_output)
-
-                clean_json = extract_json_array(raw_output)
-                if not clean_json:
-                    print("⚠️ GPT returned non-JSON:", raw_output)
-                    raise ValueError("GPT did not return valid JSON.")
-
-                try:
-                    # Replace curly quotes with straight quotes before parsing
-                    clean_json = clean_json.replace('“', '"').replace('”', '"')
-                    requirements = ast.literal_eval(clean_json)
-                except Exception as e:
-                    print("❌ Failed to safely evaluate GPT output:")
-                    print(clean_json)
-                    raise ValueError(f"Invalid JSON-like format: {e}")
+                requirements = json.loads(extract_response.choices[0].message.content.strip())
 
                 # Step 2: Compare requirements to submittal
                 compare_prompt = [
@@ -107,9 +80,7 @@ def index():
                     temperature=0
                 )
 
-                result_json = compare_response.choices[0].message.content.strip()
-                parsed_result = json.loads(result_json)
-
+                parsed_result = json.loads(compare_response.choices[0].message.content.strip())
                 summary = "Comparison completed successfully."
 
             except Exception as e:
