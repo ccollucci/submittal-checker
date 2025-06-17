@@ -2,6 +2,7 @@ import os
 import json
 import time
 import re
+import ast
 from flask import Flask, request, render_template
 import fitz  # PyMuPDF
 import openai
@@ -50,7 +51,8 @@ def index():
                         "role": "system",
                         "content": (
                             "You are an architectural compliance assistant. Your task is to extract only enforceable, specific requirements from the provided specification."
-                            " Do not summarize or paraphrase. Return only a valid JSON array of strings. Do not include any comments, explanations, or formatting. Use proper escape characters and close all quotes."
+                            " Do not summarize or paraphrase. Return only a valid JSON array of strings using double straight quotes (\")."
+                            " Do not use curly quotes, smart quotes, or markdown formatting."
                         )
                     },
                     {
@@ -65,7 +67,7 @@ def index():
                     temperature=0
                 )
 
-                time.sleep(10)  # safer delay
+                time.sleep(10)
                 raw_output = extract_response.choices[0].message.content.strip()
                 print("GPT Extracted Requirements Raw Output:")
                 print(raw_output)
@@ -76,11 +78,13 @@ def index():
                     raise ValueError("GPT did not return valid JSON.")
 
                 try:
-                    requirements = json.loads(clean_json)
-                except json.JSONDecodeError as e:
-                    print("❌ Failed to parse JSON:")
+                    # Replace curly quotes with straight quotes before parsing
+                    clean_json = clean_json.replace('“', '"').replace('”', '"')
+                    requirements = ast.literal_eval(clean_json)
+                except Exception as e:
+                    print("❌ Failed to safely evaluate GPT output:")
                     print(clean_json)
-                    raise ValueError(f"Invalid JSON format: {e}")
+                    raise ValueError(f"Invalid JSON-like format: {e}")
 
                 # Step 2: Compare requirements to submittal
                 compare_prompt = [
