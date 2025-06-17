@@ -73,25 +73,25 @@ def index():
                     "content": f"SPEC SUMMARY:\n{spec_summary}\n\nFULL SUBMITTAL:\n{subm_text}"
                 }
             ]
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            temperature=0
+        )
+        result = response.choices[0].message.content.strip()
 
-            try:
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=messages,
-                    temperature=0
-                )
-                result = response.choices[0].message.content
+        # Try parsing result as JSON
+        try:
+            parsed = json.loads(result)
+        except json.JSONDecodeError:
+            parsed = None
 
-                # Try to parse result into JSON format
-                try:
-                    parsed = json.loads(result)
-                except Exception:
-                    parsed = None
+    except Exception as e:
+        result = f"Error calling OpenAI: {e}"
+        parsed = None
 
-            except Exception as e:
-                result = f"Error calling OpenAI: {e}"
-
-    return render_template('index.html', result=result, parsed_result=parsed)
+return render_template('index.html', result=result, parsed_result=parsed)
 
 if __name__ == '__main__':
     app.run(debug=True)
