@@ -36,7 +36,6 @@
     }
 
     .result-box {
-      white-space: pre-wrap;
       background: #f8f9fa;
       color: #000;
       border: 1px solid #ddd;
@@ -60,6 +59,24 @@
 
     .footer-img {
       margin-top: 2rem;
+    }
+
+    table {
+      width: 100%;
+    }
+
+    th, td {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+    }
+
+    th {
+      background-color: #e9ecef;
+      font-weight: bold;
+    }
+
+    td {
+      background-color: #ffffff;
     }
   </style>
 </head>
@@ -100,10 +117,10 @@
       <div class="result-box mt-2">{{ summary }}</div>
     {% endif %}
 
-    {% if raw_table %}
+    {% if rendered_table %}
       <h2 class="mt-4 text-white">Compliance Table</h2>
       <div class="result-box mt-3 bg-white text-dark">
-        <pre>{{ rendered_table | safe }}
+        {{ rendered_table | safe }}
       </div>
     {% endif %}
   </div>
