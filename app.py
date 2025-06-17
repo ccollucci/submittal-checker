@@ -2,6 +2,7 @@ import os
 import json
 import time
 import hashlib
+import re
 from flask import Flask, request, render_template
 import fitz  # PyMuPDF
 import openai
@@ -56,7 +57,11 @@ def save_requirements_to_cache(spec_text, requirements):
     with open(cache_path, "w") as f:
         json.dump(data, f)
 
-def call_gpt_with_retry(prompt_messages, retries=3, delay=2.5):
+def extract_json_array(text):
+    match = re.search(r"\[.*\]", text, re.DOTALL)
+    return match.group(0) if match else None
+
+def call_gpt_with_retry(prompt_messages, retries=4, base_delay=3):
     for attempt in range(retries):
         try:
             return openai.ChatCompletion.create(
@@ -65,8 +70,9 @@ def call_gpt_with_retry(prompt_messages, retries=3, delay=2.5):
                 temperature=0
             )
         except openai.error.RateLimitError:
-            print(f"⚠️ Rate limit hit. Retry {attempt + 1}/{retries} in {delay}s...")
-            time.sleep(delay)
+            wait_time = base_delay * (2 ** attempt)
+            print(f"⚠️ Rate limit hit. Retry {attempt + 1}/{retries} in {wait_time}s...")
+            time.sleep(wait_time)
         except Exception as e:
             print(f"❌ Unexpected error: {e}")
             raise
@@ -86,10 +92,8 @@ def index():
                 spec_text = extract_text(spec_file)
                 subm_text = extract_text(subm_file)
 
-                # Check cache
                 requirements = load_cached_requirements(spec_text)
                 if not requirements:
-                    # Step 1: Extract requirements
                     extract_prompt = [
                         {
                             "role": "system",
@@ -105,14 +109,17 @@ def index():
                     ]
 
                     extract_response = call_gpt_with_retry(extract_prompt)
-                    time.sleep(2.5)
-                    req_json = extract_response.choices[0].message.content.strip()
-                    requirements = json.loads(req_json)
+                    time.sleep(10)  # safer delay
+                    raw_output = extract_response.choices[0].message.content.strip()
+                    print("GPT Extracted Requirements Raw Output:")
+                    print(raw_output)
 
-                    # Save to cache
+                    clean_json = extract_json_array(raw_output)
+                    if not clean_json:
+                        raise ValueError("GPT did not return valid JSON.")
+                    requirements = json.loads(clean_json)
                     save_requirements_to_cache(spec_text, requirements)
 
-                # Step 2: Compare requirements to submittal
                 compare_prompt = [
                     {
                         "role": "system",
