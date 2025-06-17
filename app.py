@@ -25,6 +25,8 @@ def summarize(text, prompt_intro):
         max_tokens=500
     )
     return resp.choices[0].message.content
+except Exception as e:
+    result = f"Error calling OpenAI: {e}
 
 def chunk_text(text, max_chars=15000):
     return [ text[i:i+max_chars] for i in range(0, len(text), max_chars) ]
@@ -71,7 +73,16 @@ def index():
             )
             result = response.choices[0].message.content
 
-    return render_template('index.html', result=result)
+    import json
+
+parsed = None
+try:
+    parsed = json.loads(result)
+except Exception:
+    pass  # fallback to raw text if not JSON
+
+return render_template('index.html', result=result, parsed_result=parsed)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

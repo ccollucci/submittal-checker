@@ -87,8 +87,41 @@
     </form>
 
     {% if result %}
-      <h2 class="mt-4">AI-Generated Comparison</h2>
-      <div class="result-box mt-3">{{ result }}</div>
+      {% if parsed_result %}
+  <h2 class="mt-4">Compliance Results</h2>
+  <div class="table-responsive mt-3">
+    <table class="table table-bordered table-sm align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Requirement</th>
+          <th>Provided</th>
+          <th>Compliant?</th>
+          <th>Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in parsed_result %}
+        <tr>
+          <td>{{ item.requirement }}</td>
+          <td>{{ item.provided }}</td>
+          <td>
+            {% if item.compliance %}
+              <span class="badge bg-success">Yes</span>
+            {% else %}
+              <span class="badge bg-danger">No</span>
+            {% endif %}
+          </td>
+          <td>{{ item.comment }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <h2 class="mt-4">AI-Generated Comparison</h2>
+  <div class="result-box mt-3">{{ result }}</div>
+{% endif %}
+
     {% endif %}
   </div>
 </body>
