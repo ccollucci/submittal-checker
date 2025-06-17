@@ -96,8 +96,10 @@
     </div>
 
     {% if summary %}
-      <h2 class="mt-4 text-white">Summary</h2>
-      <div class="result-box mt-2">{{ summary }}</div>
+      <h2 class="mt-4 text-white">Compliance Table</h2>
+      <div class="result-box mt-3">
+        <pre>{{ raw_table }}</pre>
+      </div>
     {% endif %}
 
     {% if parsed_result %}
