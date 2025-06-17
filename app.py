@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from flask import Flask, request, render_template
 import fitz  # PyMuPDF
 import openai
@@ -54,6 +55,8 @@ def index():
                     messages=extract_prompt,
                     temperature=0
                 )
+
+                time.sleep(2.5)  # Wait to stay within TPM limit
 
                 req_json = extract_response.choices[0].message.content.strip()
                 requirements = json.loads(req_json)
