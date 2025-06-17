@@ -2,11 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Submittal vs Spec Checker</title>
+  <title>Spec Check</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { padding: 2rem; background: #f8f9fa; }
-    .container { max-width: 720px; margin: auto; }
+    html, body {
+      height: 100%;
+      background: #f8f9fa;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 720px;
+      width: 100%;
+      text-align: center;
+    }
     .result-box {
       white-space: pre-wrap;
       background: #f1f1f1;
@@ -15,13 +28,16 @@
       border-radius: 6px;
       max-height: 400px;
       overflow-y: auto;
+      text-align: left;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1 class="mb-4">Submittal vs Spec Checker</h1>
-    <form method="post" enctype="multipart/form-data" class="mb-4">
+    <h1 class="mb-2">Spec Check</h1>
+    <p class="text-muted mb-4">Windover's in-house AI-enabled submittal compliance checker. Just upload the spec sheet and submittal below and AI will do the rest.</p>
+    
+    <form method="post" enctype="multipart/form-data" class="mb-4 text-start">
       <div class="mb-3">
         <label class="form-label">Specification PDF</label>
         <input class="form-control" type="file" name="spec" accept="application/pdf" required>
@@ -30,12 +46,14 @@
         <label class="form-label">Submittal PDF</label>
         <input class="form-control" type="file" name="submittal" accept="application/pdf" required>
       </div>
-      <button type="submit" class="btn btn-primary">Compare</button>
+      <div class="text-center">
+        <button type="submit" class="btn btn-primary">Compare</button>
+      </div>
     </form>
 
     {% if result %}
-    <h2 class="mt-4">AI-Generated Comparison</h2>
-    <div class="result-box mt-3">{{ result }}</div>
+      <h2 class="mt-4">AI-Generated Comparison</h2>
+      <div class="result-box mt-3">{{ result }}</div>
     {% endif %}
   </div>
 </body>
