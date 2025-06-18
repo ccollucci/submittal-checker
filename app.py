@@ -20,6 +20,15 @@ def extract_text(file_stream):
     doc = fitz.open(stream=file_stream.read(), filetype="pdf")
     return "\n".join(page.get_text() for page in doc)
 
+def parse_json_strict(content, expected_type=list):
+    try:
+        data = json.loads(content.strip())
+        if not isinstance(data, expected_type):
+            raise ValueError(f"Expected a JSON {expected_type.__name__}, got {type(data).__name__}")
+        return data
+    except Exception as e:
+        raise ValueError(f"Invalid JSON format: {e}")
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     summary = None
@@ -56,7 +65,7 @@ def index():
                 )
 
                 time.sleep(10)
-                requirements = json.loads(extract_response.choices[0].message.content.strip())
+                requirements = parse_json_strict(extract_response.choices[0].message.content)
 
                 # Step 2: Compare requirements to submittal using structured JSON output
                 compare_prompt = [
@@ -79,7 +88,7 @@ def index():
                     temperature=0
                 )
 
-                parsed_result = json.loads(compare_response.choices[0].message.content.strip())
+                parsed_result = parse_json_strict(compare_response.choices[0].message.content)
                 summary = "Comparison completed successfully."
 
             except Exception as e:
