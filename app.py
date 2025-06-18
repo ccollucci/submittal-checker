@@ -10,7 +10,7 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB limit
 
 @app.errorhandler(413)
 def too_large(e):
@@ -36,13 +36,13 @@ def index():
                 spec_text = extract_text(spec_file)
                 subm_text = extract_text(subm_file)
 
-                # Step 1: Extract requirements
+                # Step 1: Extract enforceable requirements
                 extract_prompt = [
                     {
                         "role": "system",
                         "content": (
-                            "You are an architectural compliance assistant. Extract enforceable requirements from the provided specification."
-                            " Return only a valid JSON array of requirement strings. No explanation. No markdown formatting."
+                            "You are an architectural compliance assistant. Extract enforceable requirements from the provided specification. "
+                            "Return only a valid JSON array of requirement strings. No explanation. No markdown formatting."
                         )
                     },
                     {
@@ -57,7 +57,7 @@ def index():
                     temperature=0
                 )
 
-                time.sleep(10)
+                time.sleep(10)  # Optional wait to avoid rate limiting
                 raw_json = extract_response.choices[0].message.content.strip()
 
                 if raw_json.startswith("```json"):
@@ -74,42 +74,45 @@ def index():
 
                 requirements = json.loads(raw_json)
 
-                # Step 2: Compare
-                compare_prompt = [
-                    {
-                        "role": "system",
-                        "content": (
-                            "Compare each requirement to the submittal. For each, return an object with:"
-                            " requirement, provided, compliance (true/false), and comment. Return only a JSON array of these objects."
+                # Step 2: Compare each requirement individually
+                parsed_result = []
+
+                for req in requirements:
+                    try:
+                        single_compare = openai.ChatCompletion.create(
+                            model="gpt-4o",
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": (
+                                        "Compare the requirement to the submittal. Return a JSON object with: "
+                                        "requirement, provided, compliance (true/false), and comment."
+                                    )
+                                },
+                                {
+                                    "role": "user",
+                                    "content": f"REQUIREMENT:\n{req}\n\nSUBMITTAL:\n{subm_text}"
+                                }
+                            ],
+                            temperature=0
                         )
-                    },
-                    {
-                        "role": "user",
-                        "content": f"REQUIREMENTS:\n{json.dumps(requirements)}\n\nSUBMITTAL:\n{subm_text}"
-                    }
-                ]
 
-                compare_response = openai.ChatCompletion.create(
-                    model="gpt-4o",
-                    messages=compare_prompt,
-                    temperature=0
-                )
+                        result = single_compare.choices[0].message.content.strip()
+                        if result.startswith("```json"):
+                            result = result[7:]
+                        if result.endswith("```"):
+                            result = result[:-3]
 
-                result_json = compare_response.choices[0].message.content.strip()
+                        parsed_result.append(json.loads(result))
 
-                if result_json.startswith("```json"):
-                    result_json = result_json[7:]
-                if result_json.endswith("```"):
-                    result_json = result_json[:-3]
-                result_json = result_json.strip()
+                    except Exception as e:
+                        parsed_result.append({
+                            "requirement": req,
+                            "provided": "",
+                            "compliance": False,
+                            "comment": f"Error: {str(e)}"
+                        })
 
-                print("GPT comparison result raw JSON:")
-                print(result_json)
-
-                if not result_json or not result_json.startswith("["):
-                    raise ValueError("GPT did not return valid comparison JSON")
-
-                parsed_result = json.loads(result_json)
                 summary = "Comparison completed successfully."
 
             except Exception as e:
