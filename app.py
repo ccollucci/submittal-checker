@@ -1,17 +1,16 @@
 import os
+import json
 import time
-import markdown2
 from flask import Flask, request, render_template
 import fitz  # PyMuPDF
 import openai
 from dotenv import load_dotenv
 
-# Load OpenAI key
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max upload
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 @app.errorhandler(413)
 def too_large(e):
@@ -21,19 +20,10 @@ def extract_text(file_stream):
     doc = fitz.open(stream=file_stream.read(), filetype="pdf")
     return "\n".join(page.get_text() for page in doc)
 
-def ensure_valid_markdown_table(table_text):
-    # Ensure table has a proper header and separator line
-    lines = [line.strip() for line in table_text.splitlines() if line.strip()]
-    if len(lines) >= 2 and "|" in lines[0]:
-        header = lines[0]
-        separator = "|".join(["---"] * (header.count("|") - 1))
-        lines.insert(1, separator)
-    return "\n".join(lines)
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    summary = ""
-    rendered_table = ""
+    summary = None
+    parsed_result = []
 
     if request.method == 'POST':
         spec_file = request.files.get('spec')
@@ -44,13 +34,13 @@ def index():
                 spec_text = extract_text(spec_file)
                 subm_text = extract_text(subm_file)
 
-                # Step 1: Extract requirements
+                # Step 1: Extract requirements as JSON list
                 extract_prompt = [
                     {
                         "role": "system",
                         "content": (
-                            "You are an architectural compliance assistant. Extract enforceable requirements from the specification."
-                            " List each one briefly as a bullet point."
+                            "You are an architectural compliance assistant. Extract enforceable requirements from the provided specification."
+                            " Return only a valid JSON array of requirement strings."
                         )
                     },
                     {
@@ -66,23 +56,20 @@ def index():
                 )
 
                 time.sleep(10)
-                requirements_text = extract_response.choices[0].message.content.strip()
+                requirements = json.loads(extract_response.choices[0].message.content.strip())
 
-                # Step 2: Compare requirements to submittal using markdown table and summary
+                # Step 2: Compare requirements to submittal using structured JSON output
                 compare_prompt = [
                     {
                         "role": "system",
                         "content": (
-                            "Compare each requirement to the submittal."
-                            " First provide a brief summary (2-3 sentences) of the overall compliance."
-                            " Then provide a markdown table with columns: Requirement | Provided | Compliant (Yes/No) | Comment."
-                            " Make sure the markdown table includes a proper header separator using --- on the second line."
-                            " Only return the summary paragraph followed by the table."
+                            "Compare each requirement to the submittal. For each, return an object with:"
+                            " requirement, provided, compliance (true/false), and comment. Return only a JSON array of these objects."
                         )
                     },
                     {
                         "role": "user",
-                        "content": f"REQUIREMENTS:\n{requirements_text}\n\nSUBMITTAL:\n{subm_text}"
+                        "content": f"REQUIREMENTS:\n{json.dumps(requirements)}\n\nSUBMITTAL:\n{subm_text}"
                     }
                 ]
 
@@ -92,34 +79,13 @@ def index():
                     temperature=0
                 )
 
-                full_output = compare_response.choices[0].message.content.strip()
-
-                # Separate summary and table
-                split = full_output.split("| Requirement |", 1)
-                if len(split) == 2:
-                    summary = split[0].strip()
-                    raw_table = "| Requirement |" + split[1].strip()
-                else:
-                    summary = full_output
-                    raw_table = ""
-
-                raw_table = ensure_valid_markdown_table(raw_table)
-                rendered_table = markdown2.markdown(raw_table)
+                parsed_result = json.loads(compare_response.choices[0].message.content.strip())
+                summary = "Comparison completed successfully."
 
             except Exception as e:
                 summary = f"⚠️ Error: {e}"
 
-    print("SUMMARY:")
-    print(summary)
-    print("RENDERED TABLE:")
-    print(rendered_table)
-
-    return render_template(
-    'index.html',
-    summary=summary or "",
-    rendered_table=rendered_table or ""
-)
-
+    return render_template('index.html', summary=summary, parsed_result=parsed_result)
 
 if __name__ == '__main__':
     app.run(debug=True)
