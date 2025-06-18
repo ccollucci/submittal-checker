@@ -97,6 +97,14 @@ def index():
                 )
 
                 result_json = compare_response.choices[0].message.content.strip()
+
+                # Remove markdown code block wrapper if present
+                if result_json.startswith("```json"):
+                    result_json = result_json[7:]
+                if result_json.endswith("```"):
+                    result_json = result_json[:-3]
+                result_json = result_json.strip()
+
                 print("GPT comparison result raw JSON:")
                 print(result_json)
 
