@@ -81,13 +81,12 @@
         </div>
       </form>
 
-      {% if is_processing %}
-        <div class="progress mt-3">
-          <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-               style="width: 100%">Processing...
-          </div>
+      <!-- Always-present progress bar (hidden by default) -->
+      <div id="loading-bar" class="progress mt-3 d-none">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+             style="width: 100%">Processing...
         </div>
-      {% endif %}
+      </div>
     </div>
 
     {% if summary %}

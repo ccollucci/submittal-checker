@@ -1,6 +1,5 @@
 import os
 import json
-import time
 from flask import Flask, request, render_template
 import fitz  # PyMuPDF
 import openai
@@ -10,7 +9,7 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB upload limit
 
 @app.errorhandler(413)
 def too_large(e):
@@ -24,10 +23,8 @@ def extract_text(file_stream):
 def index():
     summary = None
     parsed_result = []
-    is_processing = False
 
     if request.method == 'POST':
-        is_processing = True
         spec_file = request.files.get('spec')
         subm_file = request.files.get('submittal')
 
@@ -36,7 +33,7 @@ def index():
                 spec_text = extract_text(spec_file)
                 subm_text = extract_text(subm_file)
 
-                # Step 1: Extract requirements as JSON list
+                # Step 1: Extract requirements from spec
                 extract_prompt = [
                     {
                         "role": "system",
@@ -59,7 +56,6 @@ def index():
 
                 raw_json = extract_response.choices[0].message.content.strip()
 
-                # Remove markdown code block wrapper if present
                 if raw_json.startswith("```json"):
                     raw_json = raw_json[7:]
                 if raw_json.endswith("```"):
@@ -74,7 +70,7 @@ def index():
 
                 requirements = json.loads(raw_json)
 
-                # Step 2: Compare requirements to submittal using structured JSON output
+                # Step 2: Compare requirements with submittal
                 compare_prompt = [
                     {
                         "role": "system",
@@ -97,7 +93,6 @@ def index():
 
                 result_json = compare_response.choices[0].message.content.strip()
 
-                # Remove markdown code block wrapper if present
                 if result_json.startswith("```json"):
                     result_json = result_json[7:]
                 if result_json.endswith("```"):
@@ -116,9 +111,7 @@ def index():
             except Exception as e:
                 summary = f"⚠️ Error: {e}"
 
-        is_processing = False
-
-    return render_template('index.html', summary=summary, parsed_result=parsed_result, is_processing=is_processing)
+    return render_template('index.html', summary=summary, parsed_result=parsed_result)
 
 if __name__ == '__main__':
     app.run(debug=True)
