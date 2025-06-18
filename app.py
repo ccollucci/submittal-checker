@@ -24,8 +24,10 @@ def extract_text(file_stream):
 def index():
     summary = None
     parsed_result = []
+    is_processing = False
 
     if request.method == 'POST':
+        is_processing = True
         spec_file = request.files.get('spec')
         subm_file = request.files.get('submittal')
 
@@ -40,7 +42,7 @@ def index():
                         "role": "system",
                         "content": (
                             "You are an architectural compliance assistant. Extract enforceable requirements from the provided specification."
-                            " Return only a valid JSON array of requirement strings."
+                            " Return only a valid JSON array of requirement strings. No explanation. No markdown formatting."
                         )
                     },
                     {
@@ -99,7 +101,9 @@ def index():
             except Exception as e:
                 summary = f"⚠️ Error: {e}"
 
-    return render_template('index.html', summary=summary, parsed_result=parsed_result)
+        is_processing = False
+
+    return render_template('index.html', summary=summary, parsed_result=parsed_result, is_processing=is_processing)
 
 if __name__ == '__main__':
     app.run(debug=True)
