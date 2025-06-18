@@ -54,7 +54,7 @@ def index():
                 extract_response = openai.ChatCompletion.create(
                     model="gpt-4o",
                     messages=extract_prompt,
-                    temperature=0
+                    temperature=0,
                     request_timeout=25
                 )
 
