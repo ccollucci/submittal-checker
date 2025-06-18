@@ -57,7 +57,6 @@ def index():
                     temperature=0
                 )
 
-                time.sleep(10)
                 raw_json = extract_response.choices[0].message.content.strip()
 
                 # Remove markdown code block wrapper if present
