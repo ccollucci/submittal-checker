@@ -121,7 +121,28 @@ def index():
                                 "comment": f"Error: {str(e)}"
                             })
 
-                summary = "Comparison completed successfully."
+                # Step 3: GPT-generated summary
+                try:
+                    summary_response = openai.ChatCompletion.create(
+                        model="gpt-4o",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are a technical reviewer. Given the following compliance results, summarize them clearly in 1–2 sentences."
+                            },
+                            {
+                                "role": "user",
+                                "content": f"COMPARISON RESULTS:\n{json.dumps(parsed_result)}"
+                            }
+                        ],
+                        temperature=0.5,
+                        request_timeout=20
+                    )
+
+                    summary = summary_response.choices[0].message.content.strip()
+
+                except Exception as e:
+                    summary = f"Comparison complete, but summary failed: {str(e)}"
 
             except Exception as e:
                 summary = f"⚠️ Error: {e}"
