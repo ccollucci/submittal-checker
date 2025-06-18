@@ -30,7 +30,6 @@
     .instructions {
       font-size: 1.2rem;
       line-height: 1.6;
-      font-weight: normal;
       color: #ffffff;
       margin-bottom: 2rem;
     }
@@ -41,19 +40,8 @@
       border: 1px solid #ddd;
       padding: 1rem;
       border-radius: 6px;
-      max-height: 600px;
-      overflow-x: auto;
-      text-align: left;
-    }
-
-    .form-wrapper {
-      text-align: center;
-    }
-
-    .form-wrapper form {
-      display: inline-block;
-      width: 100%;
-      max-width: 400px;
+      max-height: 400px;
+      overflow-y: auto;
       text-align: left;
     }
 
@@ -61,28 +49,11 @@
       margin-top: 2rem;
     }
 
-    table {
+    .form-wrapper form {
+      display: inline-block;
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-
-    th, td {
-      padding: 8px 12px;
-      border: 1px solid #ccc;
+      max-width: 400px;
       text-align: left;
-    }
-
-    th {
-      background-color: #e9ecef;
-    }
-
-    tr:nth-child(even) td {
-      background-color: #fdfdfd;
-    }
-
-    tr:nth-child(odd) td {
-      background-color: #f7f7f7;
     }
   </style>
 </head>
@@ -123,10 +94,35 @@
       <div class="result-box mt-2">{{ summary }}</div>
     {% endif %}
 
-    {% if rendered_table %}
+    {% if parsed_result %}
       <h2 class="mt-4 text-white">Compliance Table</h2>
-      <div class="result-box mt-3 bg-white text-dark">
-        {{ rendered_table | safe }}
+      <div class="table-responsive mt-3">
+        <table class="table table-bordered table-sm align-middle bg-white text-black">
+          <thead class="table-light">
+            <tr>
+              <th>Requirement</th>
+              <th>Provided</th>
+              <th>Compliant?</th>
+              <th>Comment</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in parsed_result %}
+            <tr>
+              <td>{{ item.requirement }}</td>
+              <td>{{ item.provided }}</td>
+              <td>
+                {% if item.compliance %}
+                  <span class="badge bg-success">Yes</span>
+                {% else %}
+                  <span class="badge bg-danger">No</span>
+                {% endif %}
+              </td>
+              <td>{{ item.comment }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     {% endif %}
   </div>
