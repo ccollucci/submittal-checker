@@ -55,7 +55,7 @@ def index():
                     model="gpt-4o",
                     messages=extract_prompt,
                     temperature=0,
-                    request_timeout=25
+                    request_timeout=20
                 )
 
                 time.sleep(10)  # Optional wait to avoid rate limiting
@@ -73,7 +73,7 @@ def index():
                 if not raw_json or not raw_json.startswith("["):
                     raise ValueError("GPT did not return valid JSON")
 
-                requirements = json.loads(raw_json)[:10]
+                requirements = json.loads(raw_json)[:5]
 
                 # Step 2: Compare each requirement individually
                 parsed_result = []
