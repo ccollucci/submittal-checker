@@ -57,7 +57,6 @@ def index():
                     temperature=0
                 )
 
-                time.sleep(5)
                 raw_json = extract_response.choices[0].message.content.strip()
 
                 if raw_json.startswith("```json"):
