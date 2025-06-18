@@ -57,7 +57,7 @@ def index():
                     temperature=0
                 )
 
-                time.sleep(5)  # optional short pause
+                time.sleep(5)
                 raw_json = extract_response.choices[0].message.content.strip()
 
                 if raw_json.startswith("```json"):
@@ -72,8 +72,7 @@ def index():
                 if not raw_json or not raw_json.startswith("["):
                     raise ValueError("GPT did not return valid JSON")
 
-                # Limit to 6 requirements max for stability
-                requirements = json.loads(raw_json)[:6]
+                requirements = json.loads(raw_json)[:6]  # keep small
                 batch_size = 3
                 batches = [requirements[i:i+batch_size] for i in range(0, len(requirements), batch_size)]
 
@@ -121,31 +120,34 @@ def index():
                                 "comment": f"Error: {str(e)}"
                             })
 
-                # Step 3: GPT-generated summary (safe version)
+                # Step 3: Simple local + GPT summary
                 try:
+                    num_total = len(parsed_result)
+                    num_compliant = sum(1 for item in parsed_result if item.get("compliance") == True)
+                    basic_summary = f"{num_compliant} out of {num_total} requirements are marked compliant."
+
+                    summary_prompt = [
+                        {
+                            "role": "system",
+                            "content": "You are a construction compliance assistant. Rephrase this result into a clear 1-2 sentence project summary."
+                        },
+                        {
+                            "role": "user",
+                            "content": basic_summary
+                        }
+                    ]
+
                     summary_response = openai.ChatCompletion.create(
                         model="gpt-4o",
-                        messages=[
-                            {
-                                "role": "system",
-                                "content": "You are a technical reviewer. Given the following compliance results, summarize them clearly in 1–2 sentences."
-                            },
-                            {
-                                "role": "user",
-                                "content": f"COMPARISON RESULTS:\n{json.dumps(parsed_result[:5])}"
-                            }
-                        ],
+                        messages=summary_prompt,
                         temperature=0.5,
-                        request_timeout=20
+                        request_timeout=10
                     )
 
-                    summary_text = summary_response.choices[0].message.content.strip()
-                    print("GPT summary response:")
-                    print(summary_text)
-                    summary = summary_text
+                    summary = summary_response.choices[0].message.content.strip()
 
                 except Exception as e:
-                    summary = f"Comparison complete, but GPT summary failed: {str(e)}"
+                    summary = f"{basic_summary} (GPT summary failed: {str(e)})"
 
             except Exception as e:
                 summary = f"⚠️ Error: {e}"
