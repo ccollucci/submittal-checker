@@ -72,7 +72,7 @@ def index():
                 if not raw_json or not raw_json.startswith("["):
                     raise ValueError("GPT did not return valid JSON")
 
-                # Limit to 6 total to keep performance safe on Render
+                # Limit to 6 requirements max for stability
                 requirements = json.loads(raw_json)[:6]
                 batch_size = 3
                 batches = [requirements[i:i+batch_size] for i in range(0, len(requirements), batch_size)]
@@ -121,7 +121,7 @@ def index():
                                 "comment": f"Error: {str(e)}"
                             })
 
-                # Step 3: GPT-generated summary
+                # Step 3: GPT-generated summary (safe version)
                 try:
                     summary_response = openai.ChatCompletion.create(
                         model="gpt-4o",
@@ -132,17 +132,20 @@ def index():
                             },
                             {
                                 "role": "user",
-                                "content": f"COMPARISON RESULTS:\n{json.dumps(parsed_result)}"
+                                "content": f"COMPARISON RESULTS:\n{json.dumps(parsed_result[:5])}"
                             }
                         ],
                         temperature=0.5,
                         request_timeout=20
                     )
 
-                    summary = summary_response.choices[0].message.content.strip()
+                    summary_text = summary_response.choices[0].message.content.strip()
+                    print("GPT summary response:")
+                    print(summary_text)
+                    summary = summary_text
 
                 except Exception as e:
-                    summary = f"Comparison complete, but summary failed: {str(e)}"
+                    summary = f"Comparison complete, but GPT summary failed: {str(e)}"
 
             except Exception as e:
                 summary = f"⚠️ Error: {e}"
