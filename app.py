@@ -20,15 +20,6 @@ def extract_text(file_stream):
     doc = fitz.open(stream=file_stream.read(), filetype="pdf")
     return "\n".join(page.get_text() for page in doc)
 
-def parse_json_strict(content, expected_type=list):
-    try:
-        data = json.loads(content.strip())
-        if not isinstance(data, expected_type):
-            raise ValueError(f"Expected a JSON {expected_type.__name__}, got {type(data).__name__}")
-        return data
-    except Exception as e:
-        raise ValueError(f"Invalid JSON format: {e}")
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     summary = None
@@ -65,7 +56,14 @@ def index():
                 )
 
                 time.sleep(10)
-                requirements = parse_json_strict(extract_response.choices[0].message.content)
+                raw_json = extract_response.choices[0].message.content.strip()
+                print("GPT extracted requirements raw JSON:")
+                print(raw_json)
+
+                if not raw_json or not raw_json.startswith("["):
+                    raise ValueError("GPT did not return valid JSON")
+
+                requirements = json.loads(raw_json)
 
                 # Step 2: Compare requirements to submittal using structured JSON output
                 compare_prompt = [
@@ -88,7 +86,14 @@ def index():
                     temperature=0
                 )
 
-                parsed_result = parse_json_strict(compare_response.choices[0].message.content)
+                result_json = compare_response.choices[0].message.content.strip()
+                print("GPT comparison result raw JSON:")
+                print(result_json)
+
+                if not result_json or not result_json.startswith("["):
+                    raise ValueError("GPT did not return valid comparison JSON")
+
+                parsed_result = json.loads(result_json)
                 summary = "Comparison completed successfully."
 
             except Exception as e:
