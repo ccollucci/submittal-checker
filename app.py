@@ -54,11 +54,10 @@ def index():
                 extract_response = openai.ChatCompletion.create(
                     model="gpt-4o",
                     messages=extract_prompt,
-                    temperature=0,
-                    request_timeout=15
+                    temperature=0
                 )
 
-                time.sleep(10)  # Optional wait to avoid rate limiting
+                time.sleep(5)  # optional short pause
                 raw_json = extract_response.choices[0].message.content.strip()
 
                 if raw_json.startswith("```json"):
@@ -73,46 +72,54 @@ def index():
                 if not raw_json or not raw_json.startswith("["):
                     raise ValueError("GPT did not return valid JSON")
 
-                requirements = json.loads(raw_json)[:3]
+                # Limit to 6 total to keep performance safe on Render
+                requirements = json.loads(raw_json)[:6]
+                batch_size = 3
+                batches = [requirements[i:i+batch_size] for i in range(0, len(requirements), batch_size)]
 
-                # Step 2: Compare each requirement individually
                 parsed_result = []
 
-                for req in requirements:
+                for batch in batches:
                     try:
-                        single_compare = openai.ChatCompletion.create(
+                        messages = [
+                            {
+                                "role": "system",
+                                "content": (
+                                    "Compare the following requirements to the submittal. "
+                                    "For each, return a JSON object with: requirement, provided, compliance (true/false), comment. "
+                                    "Respond as a JSON array of objects. No markdown formatting."
+                                )
+                            },
+                            {
+                                "role": "user",
+                                "content": f"REQUIREMENTS:\n{json.dumps(batch)}\n\nSUBMITTAL:\n{subm_text}"
+                            }
+                        ]
+
+                        response = openai.ChatCompletion.create(
                             model="gpt-4o",
-                            messages=[
-                                {
-                                    "role": "system",
-                                    "content": (
-                                        "Compare the requirement to the submittal. Return a JSON object with: "
-                                        "requirement, provided, compliance (true/false), and comment."
-                                    )
-                                },
-                                {
-                                    "role": "user",
-                                    "content": f"REQUIREMENT:\n{req}\n\nSUBMITTAL:\n{subm_text}"
-                                }
-                            ],
-                            temperature=0
+                            messages=messages,
+                            temperature=0,
+                            request_timeout=40
                         )
 
-                        result = single_compare.choices[0].message.content.strip()
+                        result = response.choices[0].message.content.strip()
                         if result.startswith("```json"):
                             result = result[7:]
                         if result.endswith("```"):
                             result = result[:-3]
+                        result = result.strip()
 
-                        parsed_result.append(json.loads(result))
+                        parsed_result.extend(json.loads(result))
 
                     except Exception as e:
-                        parsed_result.append({
-                            "requirement": req,
-                            "provided": "",
-                            "compliance": False,
-                            "comment": f"Error: {str(e)}"
-                        })
+                        for req in batch:
+                            parsed_result.append({
+                                "requirement": req,
+                                "provided": "",
+                                "compliance": False,
+                                "comment": f"Error: {str(e)}"
+                            })
 
                 summary = "Comparison completed successfully."
 
