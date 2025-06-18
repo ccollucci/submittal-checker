@@ -59,6 +59,14 @@ def index():
 
                 time.sleep(10)
                 raw_json = extract_response.choices[0].message.content.strip()
+                # Remove markdown code block wrapper if present
+                if raw_json.startswith(\"```json\"):
+                    raw_json = raw_json[7:]
+                if raw_json.endswith(\"```\"):
+                    raw_json = raw_json[:-3]
+
+                raw_json = raw_json.strip()
+
                 print("GPT extracted requirements raw JSON:")
                 print(raw_json)
 
