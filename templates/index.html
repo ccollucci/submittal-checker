@@ -32,8 +32,27 @@
       font-size: 1.2rem;
       line-height: 1.6;
       color: #ffffff;
-      margin: 2rem 0;
+      margin-bottom: 2rem;
+      text-align: left;
+    }
+
+    .drop-zone {
+      border: 2px dashed #ccc;
+      border-radius: 6px;
+      padding: 20px;
       text-align: center;
+      background-color: #f8f9fa;
+      color: #000;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+
+    .drop-zone:hover {
+      background-color: #e2e6ea;
+    }
+
+    .drop-zone input {
+      display: none;
     }
 
     .result-box {
@@ -42,22 +61,16 @@
       border: 1px solid #ddd;
       padding: 1rem;
       border-radius: 6px;
-      max-height: 400px;
-      overflow-y: auto;
       text-align: left;
     }
 
-    .form-wrapper form {
-      text-align: left;
+    .scroll-table {
+      max-height: 400px;
+      overflow-y: auto;
     }
 
     .sticky-footer {
       margin-top: auto;
-    }
-
-    .scroll-box {
-      max-height: 500px;
-      overflow-y: auto;
     }
   </style>
 </head>
@@ -65,28 +78,32 @@
   <img src="/static/header.jpg" alt="Header" class="header-img">
 
   <div class="main-content container mt-4">
-    <p class="instructions">
-      Upload your submittal and spec.<br>
-      Windover's AI handles the compliance check in seconds.
-    </p>
-
     <div class="row">
-      <!-- LEFT: Upload Form -->
+      <!-- LEFT: Instructions + Upload -->
       <div class="col-md-6 col-12 mb-4">
-        <div class="form-wrapper">
-          <form method="post" enctype="multipart/form-data" onsubmit="showLoadingBar()">
-            <div class="mb-3">
-              <label class="form-label">Specification PDF</label>
-              <input class="form-control" type="file" name="spec" accept="application/pdf" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Submittal PDF</label>
-              <input class="form-control" type="file" name="submittal" accept="application/pdf" required>
-            </div>
-            <div class="text-start">
-              <button id="submit-btn" type="submit" class="btn btn-light">Compare</button>
-            </div>
-          </form>
+        <div class="instructions">
+          Upload your submittal and spec.<br>
+          Windover's AI handles the compliance check in seconds.
+        </div>
+
+        <form method="post" enctype="multipart/form-data" onsubmit="showLoadingBar()">
+          <!-- Specification Upload -->
+          <label class="form-label">Specification PDF</label>
+          <label class="drop-zone">
+            <span id="spec-label">Drag or click to upload Specification</span>
+            <input type="file" name="spec" accept="application/pdf" required onchange="updateLabel(this, 'spec-label')">
+          </label>
+
+          <!-- Submittal Upload -->
+          <label class="form-label">Submittal PDF</label>
+          <label class="drop-zone">
+            <span id="submittal-label">Drag or click to upload Submittal</span>
+            <input type="file" name="submittal" accept="application/pdf" required onchange="updateLabel(this, 'submittal-label')">
+          </label>
+
+          <div class="text-center mt-3">
+            <button id="submit-btn" type="submit" class="btn btn-light">Compare</button>
+          </div>
 
           <!-- Loading Bar -->
           <div id="loading-bar" class="progress mt-3 d-none">
@@ -95,19 +112,19 @@
               Processing...
             </div>
           </div>
-        </div>
+        </form>
       </div>
 
       <!-- RIGHT: Results -->
       <div class="col-md-6 col-12">
-        <div class="scroll-box">
-          {% if summary %}
-            <h2 class="text-white">Summary</h2>
-            <div class="result-box mb-4">{{ summary }}</div>
-          {% endif %}
+        {% if summary %}
+          <h2 class="text-white text-center">Summary</h2>
+          <div class="result-box mb-4">{{ summary }}</div>
+        {% endif %}
 
-          {% if parsed_result %}
-            <h2 class="text-white">Compliance Table</h2>
+        {% if parsed_result %}
+          <h2 class="text-white text-center">Compliance Table</h2>
+          <div class="scroll-table">
             <div class="table-responsive mt-3">
               <table class="table table-bordered table-sm align-middle bg-white text-black">
                 <thead class="table-light">
@@ -136,8 +153,8 @@
                 </tbody>
               </table>
             </div>
-          {% endif %}
-        </div>
+          </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -148,6 +165,11 @@
     function showLoadingBar() {
       document.getElementById("submit-btn").disabled = true;
       document.getElementById("loading-bar").classList.remove("d-none");
+    }
+
+    function updateLabel(input, labelId) {
+      const fileName = input.files.length > 0 ? input.files[0].name : 'Drag or click to upload';
+      document.getElementById(labelId).textContent = fileName;
     }
   </script>
 </body>
