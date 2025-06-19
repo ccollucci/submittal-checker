@@ -81,13 +81,13 @@
         </div>
       </form>
 
-      {% if is_processing %}
-        <div class="progress mt-3">
-          <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-               style="width: 100%">Processing...
-          </div>
+      <!-- Loading Bar (Client-side controlled) -->
+      <div id="loading-bar" class="progress mt-3 d-none">
+        <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning"
+             role="progressbar" style="width: 100%">
+          Processing...
         </div>
-      {% endif %}
+      </div>
     </div>
 
     {% if summary %}
@@ -133,7 +133,7 @@
   <script>
     function showLoadingBar() {
       document.getElementById("submit-btn").disabled = true;
-      document.getElementById("loading-bar")?.classList.remove("d-none");
+      document.getElementById("loading-bar").classList.remove("d-none");
     }
   </script>
 </body>
